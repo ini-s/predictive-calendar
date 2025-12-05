@@ -1,0 +1,160 @@
+syntax = "proto3";
+
+package alat.predictive_calendar.v1;
+
+import "google/protobuf/timestamp.proto";
+
+// =============================================================
+// SERVICE DEFINITION
+// =============================================================
+
+service PredictiveCalendarService {
+  // Generate predictions for a user's calendar
+  rpc GeneratePredictions(PredictionRequest) returns (PredictionResponse);
+  
+  // Submit user feedback (Keep/Discard/Edit) for model improvement
+  rpc SubmitFeedback(FeedbackRequest) returns (FeedbackResponse);
+}
+
+// =============================================================
+// PREDICTION REQUEST/RESPONSE
+// =============================================================
+
+message PredictionRequest {
+  string user_id = 1;
+  string target_month = 2;  // Format: YYYY-MM
+  repeated Transaction historical_transactions = 3;
+  int32 max_predictions = 4;  // Default: 10, Max: 10
+}
+
+message PredictionResponse {
+  ResponseStatus status = 1;
+  repeated PredictedItem predictions = 2;
+  PredictionMetadata metadata = 3;
+  string error_message = 4;
+}
+
+message PredictedItem {
+  string prediction_id = 1;
+  string title = 2;
+  string description = 3;
+  PredictionCategory category = 4;
+  google.protobuf.Timestamp predicted_date = 5;
+  int64 predicted_amount = 6;
+  string currency = 7;  // Always "NGN"
+  float confidence_score = 8;  // 0.0 to 1.0
+  string reasoning = 9;
+  PatternType pattern_type = 10;
+  repeated string source_transaction_ids = 11;
+  int32 reminder_hours_before = 12;
+}
+
+message PredictionMetadata {
+  int64 processing_time_ms = 1;
+  int32 transactions_analyzed = 2;
+  int32 patterns_detected = 3;
+  string model_version = 4;
+  google.protobuf.Timestamp generated_at = 5;
+}
+
+// =============================================================
+// FEEDBACK REQUEST/RESPONSE
+// =============================================================
+
+message FeedbackRequest {
+  string user_id = 1;
+  repeated FeedbackItem feedback_items = 2;
+}
+
+message FeedbackItem {
+  string prediction_id = 1;
+  FeedbackAction action = 2;
+  PredictionDetails prediction_details = 3;
+  string discard_reason = 4;  // For DISCARDED action
+  EditedPrediction edited_data = 5;  // For EDITED action
+}
+
+message PredictionDetails {
+  string category = 1;
+  int64 predicted_amount = 2;
+}
+
+message EditedPrediction {
+  string corrected_title = 1;
+  google.protobuf.Timestamp corrected_date = 2;
+  int64 corrected_amount = 3;
+  string corrected_category = 4;
+}
+
+message FeedbackResponse {
+  ResponseStatus status = 1;
+  int32 processed_count = 2;
+  repeated FailedFeedbackItem failed_items = 3;
+  string message = 4;
+  bool retraining_triggered = 5;
+}
+
+message FailedFeedbackItem {
+  string prediction_id = 1;
+  string failure_reason = 2;
+}
+
+// =============================================================
+// TRANSACTION (Input Data)
+// =============================================================
+
+message Transaction {
+  string id = 1;
+  string user_id = 2;
+  int64 amount = 3;
+  string description = 4;
+  string type = 5;
+  string receiver_id = 6;  // CRITICAL: Merchant/Recipient ID for pattern grouping
+  google.protobuf.Timestamp transaction_date = 7;
+  google.protobuf.Timestamp created_at = 8;
+}
+
+// =============================================================
+// ENUMS
+// =============================================================
+
+enum ResponseStatus {
+  RESPONSE_STATUS_UNSPECIFIED = 0;
+  SUCCESS = 1;
+  PARTIAL_SUCCESS = 2;
+  FAILURE = 3;
+  INVALID_REQUEST = 4;
+  USER_NOT_FOUND = 5;
+  INSUFFICIENT_DATA = 6;
+}
+
+enum PredictionCategory {
+  PREDICTION_CATEGORY_UNSPECIFIED = 0;
+  BILL_PAYMENT = 1;
+  SUBSCRIPTION = 2;
+  LOAN_REPAYMENT = 3;
+  SAVINGS_CONTRIBUTION = 4;
+  INSURANCE_PREMIUM = 5;
+  AIRTIME_DATA = 6;
+  TRANSFER = 7;
+  DIRECT_DEBIT = 8;
+  INVESTMENT = 9;
+  OTHER = 10;
+}
+
+enum PatternType {
+  PATTERN_TYPE_UNSPECIFIED = 0;
+  MONTHLY = 1;
+  WEEKLY = 2;
+  BI_WEEKLY = 3;
+  QUARTERLY = 4;
+  ANNUAL = 5;
+  IRREGULAR = 6;
+}
+
+enum FeedbackAction {
+  FEEDBACK_ACTION_UNSPECIFIED = 0;
+  KEPT = 1;
+  DISCARDED = 2;
+  EDITED = 3;
+}
