@@ -1,0 +1,25 @@
+# Azure Functions Requirements
+# ============================
+# Python dependencies for ALAT Predictive Calendar Azure Functions
+
+# Azure Functions SDK
+azure-functions>=1.17.0
+
+# Data processing
+pandas>=2.0.0
+numpy>=1.24.0
+
+# Machine Learning
+scikit-learn>=1.3.0
+
+# gRPC (for future full gRPC support)
+grpcio>=1.59.0
+grpcio-tools>=1.59.0
+protobuf>=4.24.0
+
+# Utilities
+python-dateutil>=2.8.2
+
+# Testing
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
